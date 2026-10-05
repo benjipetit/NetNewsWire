@@ -102,6 +102,11 @@
 		D1A7E100000000000000C005 /* Images in Frameworks */ = {isa = PBXBuildFile; productRef = D1A7E100000000000000C004 /* Images */; };
 		D1A7E100000000000000C006 /* Images in Embed Frameworks */ = {isa = PBXBuildFile; productRef = D1A7E100000000000000C004 /* Images */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		D1A7E100000000000000C008 /* Images in Frameworks */ = {isa = PBXBuildFile; productRef = D1A7E100000000000000C007 /* Images */; };
+		DF21DAC63073F21B001ABAEA /* MLXHuggingFace in Frameworks */ = {isa = PBXBuildFile; productRef = DF21DAC53073F21B001ABAEA /* MLXHuggingFace */; };
+		DF21DAC83073F21B001ABAEA /* MLXLLM in Frameworks */ = {isa = PBXBuildFile; productRef = DF21DAC73073F21B001ABAEA /* MLXLLM */; };
+		DF21DACA3073F21B001ABAEA /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = DF21DAC93073F21B001ABAEA /* MLXLMCommon */; };
+		DF21DACD3073F73C001ABAEA /* HuggingFace in Frameworks */ = {isa = PBXBuildFile; productRef = DF21DACC3073F73C001ABAEA /* HuggingFace */; };
+		DF21DAD03073F766001ABAEA /* Tokenizers in Frameworks */ = {isa = PBXBuildFile; productRef = DF21DACF3073F766001ABAEA /* Tokenizers */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -513,14 +518,19 @@
 				848E84D52DB749670023F3BA /* RSCore in Frameworks */,
 				179D280B26F6F93D003B2E0A /* Zip in Frameworks */,
 				8424B31B2DB73D530053AA11 /* RSParser in Frameworks */,
+				DF21DAD03073F766001ABAEA /* Tokenizers in Frameworks */,
+				DF21DACA3073F21B001ABAEA /* MLXLMCommon in Frameworks */,
 				516B695F24D2F33B00B5702F /* Account in Frameworks */,
 				CEE687C900324CE2908FCF98 /* ErrorLog in Frameworks */,
 				843E2F1A2CF2B8C500ED170F /* RSWeb in Frameworks */,
+				DF21DAC63073F21B001ABAEA /* MLXHuggingFace in Frameworks */,
 				D1A7E100000000000000A002 /* HTMLMetadata in Frameworks */,
 				D1A7E100000000000000B002 /* ActivityLog in Frameworks */,
 				D1A7E100000000000000C002 /* Images in Frameworks */,
 				513F32712593EE6F0003048F /* Articles in Frameworks */,
 				513F32772593EE6F0003048F /* Secrets in Frameworks */,
+				DF21DACD3073F73C001ABAEA /* HuggingFace in Frameworks */,
+				DF21DAC83073F21B001ABAEA /* MLXLLM in Frameworks */,
 				84EE434B2DB8A44C009D3A8D /* RSDatabase in Frameworks */,
 				513F32742593EE6F0003048F /* ArticlesDatabase in Frameworks */,
 				513F327A2593EE6F0003048F /* SyncDatabase in Frameworks */,
@@ -777,6 +787,11 @@
 				848E84D42DB749670023F3BA /* RSCore */,
 				84EE3F142DB8A0A0009D3A8D /* RSTree */,
 				84EE434A2DB8A44C009D3A8D /* RSDatabase */,
+				DF21DAC53073F21B001ABAEA /* MLXHuggingFace */,
+				DF21DAC73073F21B001ABAEA /* MLXLLM */,
+				DF21DAC93073F21B001ABAEA /* MLXLMCommon */,
+				DF21DACC3073F73C001ABAEA /* HuggingFace */,
+				DF21DACF3073F766001ABAEA /* Tokenizers */,
 			);
 			productName = "NetNewsWire-iOS";
 			productReference = 840D617C2029031C009BC708 /* NetNewsWire.app */;
@@ -932,6 +947,9 @@
 				17192AD82567B3D500AAEACA /* XCRemoteSwiftPackageReference "Sparkle" */,
 				519CA8E325841DB700EB079A /* XCRemoteSwiftPackageReference "plcrashreporter" */,
 				179D280926F6F93D003B2E0A /* XCRemoteSwiftPackageReference "Zip" */,
+				DF21DAC43073F21B001ABAEA /* XCRemoteSwiftPackageReference "mlx-swift-lm" */,
+				DF21DACB3073F73C001ABAEA /* XCRemoteSwiftPackageReference "swift-huggingface" */,
+				DF21DACE3073F766001ABAEA /* XCRemoteSwiftPackageReference "swift-transformers" */,
 			);
 			preferredProjectObjectVersion = 46;
 			productRefGroup = 849C64611ED37A5D003D8FC0 /* Products */;
@@ -1488,6 +1506,30 @@
 				minimumVersion = 1.8.1;
 			};
 		};
+		DF21DAC43073F21B001ABAEA /* XCRemoteSwiftPackageReference "mlx-swift-lm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ml-explore/mlx-swift-lm";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.32.3;
+			};
+		};
+		DF21DACB3073F73C001ABAEA /* XCRemoteSwiftPackageReference "swift-huggingface" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/huggingface/swift-huggingface";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.13.0;
+			};
+		};
+		DF21DACE3073F766001ABAEA /* XCRemoteSwiftPackageReference "swift-transformers" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/huggingface/swift-transformers";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.3.4;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1666,6 +1708,31 @@
 		D1A7E100000000000000C007 /* Images */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Images;
+		};
+		DF21DAC53073F21B001ABAEA /* MLXHuggingFace */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DF21DAC43073F21B001ABAEA /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
+			productName = MLXHuggingFace;
+		};
+		DF21DAC73073F21B001ABAEA /* MLXLLM */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DF21DAC43073F21B001ABAEA /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
+			productName = MLXLLM;
+		};
+		DF21DAC93073F21B001ABAEA /* MLXLMCommon */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DF21DAC43073F21B001ABAEA /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
+			productName = MLXLMCommon;
+		};
+		DF21DACC3073F73C001ABAEA /* HuggingFace */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DF21DACB3073F73C001ABAEA /* XCRemoteSwiftPackageReference "swift-huggingface" */;
+			productName = HuggingFace;
+		};
+		DF21DACF3073F766001ABAEA /* Tokenizers */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DF21DACE3073F766001ABAEA /* XCRemoteSwiftPackageReference "swift-transformers" */;
+			productName = Tokenizers;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

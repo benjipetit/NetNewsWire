@@ -40,6 +40,7 @@ final class WebViewController: UIViewController {
 	private var topShowBarsViewConstraint: NSLayoutConstraint!
 	private var bottomShowBarsViewConstraint: NSLayoutConstraint!
 	private var summaryBannerView: UIView?
+	private var summaryScrollView: UIScrollView?
 	private var summaryContentStackView: UIStackView?
 	private var summaryBannerHeightConstraint: NSLayoutConstraint?
 
@@ -267,12 +268,15 @@ final class WebViewController: UIViewController {
 		view.bringSubviewToFront(banner)
 		view.layoutIfNeeded()
 
-		let fittingHeight = summaryContentStackView?.systemLayoutSizeFitting(
+		let contentHeight = summaryContentStackView?.systemLayoutSizeFitting(
 			CGSize(width: view.bounds.width, height: UIView.layoutFittingCompressedSize.height),
 			withHorizontalFittingPriority: .required,
 			verticalFittingPriority: .fittingSizeLevel
 		).height ?? 0
+		let fittingHeight = min(contentHeight, maximumSummaryBannerHeight())
 		summaryBannerHeightConstraint?.constant = fittingHeight
+		summaryScrollView?.isScrollEnabled = contentHeight > fittingHeight
+		summaryScrollView?.setContentOffset(.zero, animated: false)
 		updateWebViewSummaryInset()
 
 		let updates = {
@@ -297,6 +301,7 @@ final class WebViewController: UIViewController {
 		let completion: (Bool) -> Void = { _ in
 			banner.removeFromSuperview()
 			self.summaryBannerView = nil
+			self.summaryScrollView = nil
 			self.summaryContentStackView = nil
 			self.summaryBannerHeightConstraint = nil
 			self.updateWebViewSummaryInset()
@@ -669,13 +674,19 @@ private extension WebViewController {
 		banner.backgroundColor = .systemYellow
 		banner.alpha = 0
 
+		let scrollView = UIScrollView()
+		scrollView.translatesAutoresizingMaskIntoConstraints = false
+		scrollView.alwaysBounceVertical = false
+		scrollView.showsVerticalScrollIndicator = true
+		banner.addSubview(scrollView)
+
 		let contentStackView = UIStackView()
 		contentStackView.translatesAutoresizingMaskIntoConstraints = false
 		contentStackView.axis = .vertical
 		contentStackView.spacing = 6
 		contentStackView.isLayoutMarginsRelativeArrangement = true
 		contentStackView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16)
-		banner.addSubview(contentStackView)
+		scrollView.addSubview(contentStackView)
 
 		view.addSubview(banner)
 		let heightConstraint = banner.heightAnchor.constraint(equalToConstant: 0)
@@ -684,16 +695,27 @@ private extension WebViewController {
 			banner.trailingAnchor.constraint(equalTo: view.trailingAnchor),
 			banner.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
 			heightConstraint,
-			contentStackView.leadingAnchor.constraint(equalTo: banner.leadingAnchor),
-			contentStackView.trailingAnchor.constraint(equalTo: banner.trailingAnchor),
-			contentStackView.topAnchor.constraint(equalTo: banner.topAnchor),
-			contentStackView.bottomAnchor.constraint(equalTo: banner.bottomAnchor)
+			scrollView.leadingAnchor.constraint(equalTo: banner.leadingAnchor),
+			scrollView.trailingAnchor.constraint(equalTo: banner.trailingAnchor),
+			scrollView.topAnchor.constraint(equalTo: banner.topAnchor),
+			scrollView.bottomAnchor.constraint(equalTo: banner.bottomAnchor),
+			contentStackView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
+			contentStackView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
+			contentStackView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
+			contentStackView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
+			contentStackView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor)
 		])
 
 		summaryBannerView = banner
+		summaryScrollView = scrollView
 		summaryContentStackView = contentStackView
 		summaryBannerHeightConstraint = heightConstraint
 		return banner
+	}
+
+	func maximumSummaryBannerHeight() -> CGFloat {
+		let availableHeight = view.bounds.height - view.safeAreaInsets.top - view.safeAreaInsets.bottom
+		return max(120, availableHeight * 0.4)
 	}
 
 	func updateSummaryBanner(for state: SummaryState) {

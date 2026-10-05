@@ -7,7 +7,6 @@
 //
 
 import UIKit
-import FoundationModels
 import os
 import SafariServices
 import WebKit
@@ -36,7 +35,6 @@ final class ArticleViewController: UIViewController {
 	private var summaryTask: Task<Void, Never>?
 	private static var summaryCache = [String: String]()
 	private static let maximumSummaryInputCharacters = 12_000
-	private static let maximumSummaryResponseTokens = 250
 
 	private var pageViewController: UIPageViewController!
 	private var isPageTransitionInProgress = false
@@ -63,6 +61,7 @@ final class ArticleViewController: UIViewController {
 	private let poppableDelegate = PoppableGestureRecognizerDelegate()
 	private weak var originalPopGestureRecognizerDelegate: UIGestureRecognizerDelegate?
 	private static let logger = Logger(subsystem: Logger.nnwSubsystem, category: "ArticleViewController")
+	private let summarizer = Summarizer()
 
 	var article: Article? {
 		didSet {
@@ -378,8 +377,8 @@ final class ArticleViewController: UIViewController {
 			return
 		}
 
-		let promptText = summaryPromptText(for: article)
-		guard !promptText.isEmpty else {
+		let articleText = articleText(for: article)
+		guard !articleText.isEmpty else {
 			currentWebViewController?.showSummary(.error(NSLocalizedString("There is no article text to summarize.", comment: "Summary error")), animated: true)
 			currentWebViewController?.scrollToTop(animated: true)
 			return
@@ -391,15 +390,21 @@ final class ArticleViewController: UIViewController {
 
 		summaryTask = Task { [weak self] in
 			guard let self else { return }
-			let result = await summarize(promptText: promptText)
-			guard !Task.isCancelled else { return }
-			guard cacheKey == summaryCacheKey(for: self.article) else { return }
 
-			switch result {
-			case .success(let summary):
+			do {
+				let summary = try await summarizer.summarize(articleText)
+				guard !Task.isCancelled else { return }
+				guard cacheKey == summaryCacheKey(for: self.article) else { return }
+				guard !summary.trimmingWhitespace.isEmpty else {
+					currentWebViewController?.showSummary(.error(NSLocalizedString("The summary was empty.", comment: "Summary error")), animated: true)
+					currentWebViewController?.scrollToTop(animated: true)
+					return
+				}
 				Self.summaryCache[cacheKey] = summary
 				currentWebViewController?.showSummary(.summary(summary), animated: true)
-			case .failure(let error):
+			} catch {
+				guard !Task.isCancelled else { return }
+				guard cacheKey == summaryCacheKey(for: self.article) else { return }
 				currentWebViewController?.showSummary(.error(error.localizedDescription), animated: true)
 			}
 			currentWebViewController?.scrollToTop(animated: true)
@@ -660,18 +665,7 @@ private extension ArticleViewController {
 	}
 
 	func isSummarizeButtonAvailable() -> Bool {
-		guard #available(iOS 26, *) else {
-			return false
-		}
-
-		switch SystemLanguageModel.default.availability {
-		case .available, .unavailable(.modelNotReady):
-			return true
-		case .unavailable:
-			return false
-		@unknown default:
-			return false
-		}
+		return true
 	}
 
 	func summaryCacheKey(for article: Article?) -> String? {
@@ -679,7 +673,7 @@ private extension ArticleViewController {
 		return "\(article.accountID)-\(article.articleID)"
 	}
 
-	func summaryPromptText(for article: Article) -> String {
+	func articleText(for article: Article) -> String {
 		let articleContent: String
 		if currentState?.isShowingExtractedArticle == true, let extractedArticle = currentState?.extractedArticle {
 			articleContent = extractedArticle.content ?? ""
@@ -691,61 +685,12 @@ private extension ArticleViewController {
 		let text = articleContent.strippingHTML(maxCharacters: Self.maximumSummaryInputCharacters)
 		guard !text.isEmpty else { return "" }
 		return """
-		Summarize this article in 3 concise bullet points. Keep the summary factual and avoid adding information that is not present in the article.
-
 		Title:
 		\(title)
 
 		Article:
 		\(text)
 		"""
-	}
-
-	func summarize(promptText: String) async -> Result<String, Error> {
-		guard #available(iOS 26, *) else {
-			return .failure(SummaryError.unavailable(NSLocalizedString("Article summaries require iOS 26 or later.", comment: "Summary error")))
-		}
-
-		return await summarizeWithFoundationModels(promptText: promptText)
-	}
-
-	@available(iOS 26, *)
-	func summarizeWithFoundationModels(promptText: String) async -> Result<String, Error> {
-		let model = SystemLanguageModel.default
-		guard model.isAvailable else {
-			return .failure(SummaryError.unavailable(summaryUnavailableMessage(for: model.availability)))
-		}
-
-		do {
-			let session = LanguageModelSession(instructions: "You summarize RSS articles for a reader app. Keep summaries short, accurate, and neutral.")
-			let options = GenerationOptions(temperature: 0.2, maximumResponseTokens: Self.maximumSummaryResponseTokens)
-			let response = try await session.respond(to: promptText, options: options)
-			let summary = response.content.trimmingWhitespace
-			if summary.isEmpty {
-				return .failure(SummaryError.emptyResponse)
-			}
-			return .success(summary)
-		} catch {
-			return .failure(error)
-		}
-	}
-
-	@available(iOS 26, *)
-	func summaryUnavailableMessage(for availability: SystemLanguageModel.Availability) -> String {
-		switch availability {
-		case .available:
-			return NSLocalizedString("Article summaries are available.", comment: "Summary availability")
-		case .unavailable(.appleIntelligenceNotEnabled):
-			return NSLocalizedString("Apple Intelligence is not enabled.", comment: "Summary error")
-		case .unavailable(.deviceNotEligible):
-			return NSLocalizedString("This device does not support Apple Intelligence.", comment: "Summary error")
-		case .unavailable(.modelNotReady):
-			return NSLocalizedString("The language model is not ready yet. Try again later.", comment: "Summary error")
-		case .unavailable:
-			return NSLocalizedString("Article summaries are not available right now.", comment: "Summary error")
-		@unknown default:
-			return NSLocalizedString("Article summaries are not available right now.", comment: "Summary error")
-		}
 	}
 
 	func restoreOriginalPopGestureRecognizerDelegate() {
@@ -756,18 +701,4 @@ private extension ArticleViewController {
 		gestureRecognizer.delegate = originalPopGestureRecognizerDelegate
 	}
 
-}
-
-private enum SummaryError: LocalizedError {
-	case unavailable(String)
-	case emptyResponse
-
-	var errorDescription: String? {
-		switch self {
-		case .unavailable(let message):
-			return message
-		case .emptyResponse:
-			return NSLocalizedString("The summary was empty.", comment: "Summary error")
-		}
-	}
 }
