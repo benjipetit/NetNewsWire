@@ -52,6 +52,10 @@
 		843E2F1D2CF2B8D300ED170F /* RSWeb in Frameworks */ = {isa = PBXBuildFile; productRef = 843E2F1C2CF2B8D300ED170F /* RSWeb */; };
 		84719F4C2EE01A1100EEF332 /* Tests/NetNewsWire-iOSTests/ActivityItemSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84719F4B2EE01A1100EEF332 /* Tests/NetNewsWire-iOSTests/ActivityItemSourceTests.swift */; };
 		84719F4E2EE01A1100EEF332 /* Tests/NetNewsWire-iOSTests/MultilineUILabelSizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84719F4D2EE01A1100EEF332 /* Tests/NetNewsWire-iOSTests/MultilineUILabelSizerTests.swift */; };
+		84719F502EE01A1100EEF3B0 /* Tests/NetNewsWire-iOSTests/SummaryCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84719F502EE01A1100EEF3A0 /* Tests/NetNewsWire-iOSTests/SummaryCacheTests.swift */; };
+		84719F512EE01A1100EEF3B0 /* Tests/NetNewsWire-iOSTests/ArticleSummarizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84719F512EE01A1100EEF3A0 /* Tests/NetNewsWire-iOSTests/ArticleSummarizerTests.swift */; };
+		84719F522EE01A1100EEF3B0 /* Tests/NetNewsWire-iOSTests/ArticleSummaryBannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84719F522EE01A1100EEF3A0 /* Tests/NetNewsWire-iOSTests/ArticleSummaryBannerTests.swift */; };
+		84719F532EE01A1100EEF3B0 /* Tests/NetNewsWire-iOSTests/ArticleSummaryControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84719F532EE01A1100EEF3A0 /* Tests/NetNewsWire-iOSTests/ArticleSummaryControllerTests.swift */; };
 		848E84CD2DB749440023F3BA /* RSCore in Frameworks */ = {isa = PBXBuildFile; productRef = 848E84CC2DB749440023F3BA /* RSCore */; };
 		848E84CE2DB749440023F3BA /* RSCore in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 848E84CC2DB749440023F3BA /* RSCore */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		848E84D02DB749440023F3BA /* RSCoreResources in Frameworks */ = {isa = PBXBuildFile; productRef = 848E84CF2DB749440023F3BA /* RSCoreResources */; };
@@ -102,6 +106,11 @@
 		D1A7E100000000000000C005 /* Images in Frameworks */ = {isa = PBXBuildFile; productRef = D1A7E100000000000000C004 /* Images */; };
 		D1A7E100000000000000C006 /* Images in Embed Frameworks */ = {isa = PBXBuildFile; productRef = D1A7E100000000000000C004 /* Images */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		D1A7E100000000000000C008 /* Images in Frameworks */ = {isa = PBXBuildFile; productRef = D1A7E100000000000000C007 /* Images */; };
+		A1B2C3D40000000000000120 /* MLXLLM in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D40000000000000110 /* MLXLLM */; };
+		A1B2C3D40000000000000220 /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D40000000000000210 /* MLXLMCommon */; };
+		A1B2C3D40000000000000320 /* MLXHuggingFace in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D40000000000000310 /* MLXHuggingFace */; };
+		A1B2C3D40000000000000420 /* HuggingFace in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D40000000000000410 /* HuggingFace */; };
+		A1B2C3D40000000000000520 /* Tokenizers in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D40000000000000510 /* Tokenizers */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -287,6 +296,10 @@
 		845B14A51FC2299E0013CF92 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		84719F4B2EE01A1100EEF332 /* Tests/NetNewsWire-iOSTests/ActivityItemSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tests/NetNewsWire-iOSTests/ActivityItemSourceTests.swift"; sourceTree = SOURCE_ROOT; };
 		84719F4D2EE01A1100EEF332 /* Tests/NetNewsWire-iOSTests/MultilineUILabelSizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tests/NetNewsWire-iOSTests/MultilineUILabelSizerTests.swift"; sourceTree = SOURCE_ROOT; };
+		84719F502EE01A1100EEF3A0 /* Tests/NetNewsWire-iOSTests/SummaryCacheTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tests/NetNewsWire-iOSTests/SummaryCacheTests.swift"; sourceTree = SOURCE_ROOT; };
+		84719F512EE01A1100EEF3A0 /* Tests/NetNewsWire-iOSTests/ArticleSummarizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tests/NetNewsWire-iOSTests/ArticleSummarizerTests.swift"; sourceTree = SOURCE_ROOT; };
+		84719F522EE01A1100EEF3A0 /* Tests/NetNewsWire-iOSTests/ArticleSummaryBannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tests/NetNewsWire-iOSTests/ArticleSummaryBannerTests.swift"; sourceTree = SOURCE_ROOT; };
+		84719F532EE01A1100EEF3A0 /* Tests/NetNewsWire-iOSTests/ArticleSummaryControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tests/NetNewsWire-iOSTests/ArticleSummaryControllerTests.swift"; sourceTree = SOURCE_ROOT; };
 		848CEF1E2DB74B56002B35B5 /* NetNewsWire-iOS.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = "NetNewsWire-iOS.xctestplan"; sourceTree = "<group>"; };
 		848E84C92DB743FF0023F3BA /* NetNewsWire-CI.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = "NetNewsWire-CI.xctestplan"; sourceTree = "<group>"; };
 		848E84CA2DB743FF0023F3BA /* NetNewsWire.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = NetNewsWire.xctestplan; sourceTree = "<group>"; };
@@ -348,7 +361,11 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"NetNewsWire-iOSTests/ActivityItemSourceTests.swift",
+				"NetNewsWire-iOSTests/ArticleSummarizerTests.swift",
+				"NetNewsWire-iOSTests/ArticleSummaryBannerTests.swift",
+				"NetNewsWire-iOSTests/ArticleSummaryControllerTests.swift",
 				"NetNewsWire-iOSTests/MultilineUILabelSizerTests.swift",
+				"NetNewsWire-iOSTests/SummaryCacheTests.swift",
 			);
 			target = 849C64701ED37A5D003D8FC0 /* NetNewsWireTests */;
 		};
@@ -512,6 +529,11 @@
 				84EE3F152DB8A0A0009D3A8D /* RSTree in Frameworks */,
 				848E84D52DB749670023F3BA /* RSCore in Frameworks */,
 				179D280B26F6F93D003B2E0A /* Zip in Frameworks */,
+				A1B2C3D40000000000000120 /* MLXLLM in Frameworks */,
+				A1B2C3D40000000000000220 /* MLXLMCommon in Frameworks */,
+				A1B2C3D40000000000000320 /* MLXHuggingFace in Frameworks */,
+				A1B2C3D40000000000000420 /* HuggingFace in Frameworks */,
+				A1B2C3D40000000000000520 /* Tokenizers in Frameworks */,
 				8424B31B2DB73D530053AA11 /* RSParser in Frameworks */,
 				516B695F24D2F33B00B5702F /* Account in Frameworks */,
 				CEE687C900324CE2908FCF98 /* ErrorLog in Frameworks */,
@@ -570,6 +592,10 @@
 			children = (
 				84719F4B2EE01A1100EEF332 /* Tests/NetNewsWire-iOSTests/ActivityItemSourceTests.swift */,
 				84719F4D2EE01A1100EEF332 /* Tests/NetNewsWire-iOSTests/MultilineUILabelSizerTests.swift */,
+				84719F532EE01A1100EEF3A0 /* Tests/NetNewsWire-iOSTests/ArticleSummaryControllerTests.swift */,
+				84719F522EE01A1100EEF3A0 /* Tests/NetNewsWire-iOSTests/ArticleSummaryBannerTests.swift */,
+				84719F512EE01A1100EEF3A0 /* Tests/NetNewsWire-iOSTests/ArticleSummarizerTests.swift */,
+				84719F502EE01A1100EEF3A0 /* Tests/NetNewsWire-iOSTests/SummaryCacheTests.swift */,
 			);
 			name = "Recovered References";
 			sourceTree = "<group>";
@@ -777,6 +803,11 @@
 				848E84D42DB749670023F3BA /* RSCore */,
 				84EE3F142DB8A0A0009D3A8D /* RSTree */,
 				84EE434A2DB8A44C009D3A8D /* RSDatabase */,
+				A1B2C3D40000000000000110 /* MLXLLM */,
+				A1B2C3D40000000000000210 /* MLXLMCommon */,
+				A1B2C3D40000000000000310 /* MLXHuggingFace */,
+				A1B2C3D40000000000000410 /* HuggingFace */,
+				A1B2C3D40000000000000510 /* Tokenizers */,
 			);
 			productName = "NetNewsWire-iOS";
 			productReference = 840D617C2029031C009BC708 /* NetNewsWire.app */;
@@ -932,6 +963,9 @@
 				17192AD82567B3D500AAEACA /* XCRemoteSwiftPackageReference "Sparkle" */,
 				519CA8E325841DB700EB079A /* XCRemoteSwiftPackageReference "plcrashreporter" */,
 				179D280926F6F93D003B2E0A /* XCRemoteSwiftPackageReference "Zip" */,
+				A1B2C3D400000000000000A1 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */,
+				A1B2C3D400000000000000A2 /* XCRemoteSwiftPackageReference "swift-huggingface" */,
+				A1B2C3D400000000000000A3 /* XCRemoteSwiftPackageReference "swift-transformers" */,
 			);
 			preferredProjectObjectVersion = 46;
 			productRefGroup = 849C64611ED37A5D003D8FC0 /* Products */;
@@ -1166,6 +1200,10 @@
 			files = (
 				84719F4C2EE01A1100EEF332 /* Tests/NetNewsWire-iOSTests/ActivityItemSourceTests.swift in Sources */,
 				84719F4E2EE01A1100EEF332 /* Tests/NetNewsWire-iOSTests/MultilineUILabelSizerTests.swift in Sources */,
+				84719F532EE01A1100EEF3B0 /* Tests/NetNewsWire-iOSTests/ArticleSummaryControllerTests.swift in Sources */,
+				84719F522EE01A1100EEF3B0 /* Tests/NetNewsWire-iOSTests/ArticleSummaryBannerTests.swift in Sources */,
+				84719F512EE01A1100EEF3B0 /* Tests/NetNewsWire-iOSTests/ArticleSummarizerTests.swift in Sources */,
+				84719F502EE01A1100EEF3B0 /* Tests/NetNewsWire-iOSTests/SummaryCacheTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1488,6 +1526,30 @@
 				minimumVersion = 1.8.1;
 			};
 		};
+		A1B2C3D400000000000000A1 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ml-explore/mlx-swift-lm";
+			requirement = {
+				kind = upToNextMinorVersion;
+				minimumVersion = 3.32.3;
+			};
+		};
+		A1B2C3D400000000000000A2 /* XCRemoteSwiftPackageReference "swift-huggingface" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/huggingface/swift-huggingface";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.13.0;
+			};
+		};
+		A1B2C3D400000000000000A3 /* XCRemoteSwiftPackageReference "swift-transformers" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/huggingface/swift-transformers";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.3.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1666,6 +1728,31 @@
 		D1A7E100000000000000C007 /* Images */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Images;
+		};
+		A1B2C3D40000000000000110 /* MLXLLM */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C3D400000000000000A1 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
+			productName = MLXLLM;
+		};
+		A1B2C3D40000000000000210 /* MLXLMCommon */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C3D400000000000000A1 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
+			productName = MLXLMCommon;
+		};
+		A1B2C3D40000000000000310 /* MLXHuggingFace */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C3D400000000000000A1 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
+			productName = MLXHuggingFace;
+		};
+		A1B2C3D40000000000000410 /* HuggingFace */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C3D400000000000000A2 /* XCRemoteSwiftPackageReference "swift-huggingface" */;
+			productName = HuggingFace;
+		};
+		A1B2C3D40000000000000510 /* Tokenizers */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C3D400000000000000A3 /* XCRemoteSwiftPackageReference "swift-transformers" */;
+			productName = Tokenizers;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

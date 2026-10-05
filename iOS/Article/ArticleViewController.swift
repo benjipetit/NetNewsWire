@@ -40,6 +40,13 @@ final class ArticleViewController: UIViewController {
 		return pageViewController?.viewControllers?.first as? WebViewController
 	}
 
+	private lazy var summarizeBarButtonItem: UIBarButtonItem = {
+		let item = UIBarButtonItem(image: UIImage(systemName: "sparkles"), style: .plain, target: self, action: #selector(summarizeArticle(_:)))
+		item.accessibilityLabel = NSLocalizedString("Summarize", comment: "Summarize article button")
+		item.accessibilityIdentifier = "summarizeButton"
+		return item
+	}()
+
 	private var articleExtractorButton: ArticleExtractorButton = {
 		let button = ArticleExtractorButton(type: .system)
 		button.frame = CGRect(x: 0, y: 0, width: 44.0, height: 44.0)
@@ -145,6 +152,7 @@ final class ArticleViewController: UIViewController {
 
 		if #available(iOS 26, *) {
 			toolbarItems?.insert(articleExtractorBarButtonItem, at: 5)
+			toolbarItems?.insert(summarizeBarButtonItem, at: 6)
 		} else {
 			let flex = { UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil) }
 			toolbarItems = [
@@ -155,6 +163,8 @@ final class ArticleViewController: UIViewController {
 				nextUnreadBarButtonItem,
 				flex(),
 				articleExtractorBarButtonItem,
+				flex(),
+				summarizeBarButtonItem,
 				flex(),
 				actionBarButtonItem
 			]
@@ -267,6 +277,7 @@ final class ArticleViewController: UIViewController {
 
 		guard let article = article else {
 			articleExtractorButton.isEnabled = false
+			summarizeBarButtonItem.isEnabled = false
 			nextUnreadBarButtonItem.isEnabled = false
 			prevArticleBarButtonItem.isEnabled = false
 			nextArticleBarButtonItem.isEnabled = false
@@ -285,6 +296,7 @@ final class ArticleViewController: UIViewController {
 		let permalinkPresent = article.preferredLink != nil
 		articleExtractorButton.isEnabled = permalinkPresent && !AppDefaults.shared.isDeveloperBuild
 		actionBarButtonItem.isEnabled = permalinkPresent
+		summarizeBarButtonItem.isEnabled = true
 
 		if article.status.read {
 			readBarButtonItem.image = Assets.Images.circleOpen
@@ -346,6 +358,10 @@ final class ArticleViewController: UIViewController {
 
 	@IBAction func toggleArticleExtractor(_ sender: Any) {
 		currentWebViewController?.toggleArticleExtractor()
+	}
+
+	@IBAction func summarizeArticle(_ sender: Any) {
+		currentWebViewController?.toggleSummary()
 	}
 
 	@IBAction func nextUnread(_ sender: Any) {

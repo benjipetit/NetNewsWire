@@ -75,6 +75,14 @@ final class WebViewController: UIViewController {
 
 	private(set) var article: Article?
 
+	private lazy var summaryController: ArticleSummaryController = {
+		let controller = ArticleSummaryController()
+		controller.onStateChange = { [weak self] state in
+			self?.webView?.evaluateJavaScript(ArticleSummaryBanner.updateScript(for: state))
+		}
+		return controller
+	}()
+
 	let scrollPositionQueue = CoalescingQueue(name: "Article Scroll Position", interval: 0.3, maxInterval: 0.3)
 	var windowScrollY = 0 {
 		didSet {
@@ -172,6 +180,7 @@ final class WebViewController: UIViewController {
 
 		if article != self.article {
 			self.article = article
+			summaryController.reset()
 			// A restoration offset belongs only to the article it was saved for.
 			// <https://github.com/Ranchero-Software/NetNewsWire/issues/5243>
 			restoreWindowScrollY = nil
@@ -313,6 +322,31 @@ final class WebViewController: UIViewController {
 			startArticleExtractor()
 		}
 
+	}
+
+	func toggleSummary() {
+		guard let article else {
+			return
+		}
+
+		switch summaryController.state {
+		case .loading:
+			return
+		case .loaded:
+			summaryController.reset()
+		case .idle, .failed:
+			let content: String
+			if isShowingExtractedArticle, let extractedContent = extractedArticle?.content {
+				content = extractedContent
+			} else {
+				content = article.contentHTML ?? article.contentText ?? article.summary ?? ""
+			}
+			let articleID = article.articleID
+			let title = article.title ?? ""
+			Task {
+				await summaryController.summarize(articleID: articleID, title: title, content: content)
+			}
+		}
 	}
 
 	func stopArticleExtractorIfProcessing() {
@@ -696,7 +730,7 @@ private extension WebViewController {
 			"title": rendering.title,
 			"baseURL": rendering.baseURL,
 			"style": rendering.style,
-			"body": rendering.html,
+			"body": summaryBannerHTML(for: article) + rendering.html,
 			"windowScrollY": String(windowScrollY)
 		]
 
@@ -712,6 +746,13 @@ private extension WebViewController {
 
 		WebViewConfiguration.addContentBlockingRules(to: webView)
 		webView.loadHTMLString(html, baseURL: URL(string: rendering.baseURL))
+	}
+
+	func summaryBannerHTML(for article: Article?) -> String {
+		guard article != nil, articleExtractor?.state != .processing else {
+			return ""
+		}
+		return ArticleSummaryBanner.bodyPrefix(for: summaryController.state)
 	}
 
 	func finalScrollPosition(scrollingUp: Bool) -> CGFloat {
