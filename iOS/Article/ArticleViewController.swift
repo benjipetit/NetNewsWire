@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import FoundationModels
 import os
 import SafariServices
 import WebKit
@@ -31,6 +32,11 @@ final class ArticleViewController: UIViewController {
 	@IBOutlet private var searchBar: ArticleSearchBar!
 	@IBOutlet private var searchBarBottomConstraint: NSLayoutConstraint!
 	private var defaultControls: [UIBarButtonItem]?
+	private var summarizeBarButtonItem: UIBarButtonItem!
+	private var summaryTask: Task<Void, Never>?
+	private static var summaryCache = [String: String]()
+	private static let maximumSummaryInputCharacters = 12_000
+	private static let maximumSummaryResponseTokens = 250
 
 	private var pageViewController: UIPageViewController!
 	private var isPageTransitionInProgress = false
@@ -66,10 +72,12 @@ final class ArticleViewController: UIViewController {
 				// The launch-restoration scroll position belongs only to the restored article.
 				// <https://github.com/Ranchero-Software/NetNewsWire/issues/5243>
 				restoreScrollPosition = nil
+				summaryTask?.cancel()
 			}
 
 			if let controller = currentWebViewController, controller.article != article {
 				controller.setArticle(article)
+				controller.hideSummaryBanner()
 				if isPageTransitionInProgress {
 					// Calling setViewControllers during an active page transition trips a UIPageViewController
 					// internal assertion (NSInternalInconsistencyException) and crashes the app. Stash the
@@ -142,9 +150,15 @@ final class ArticleViewController: UIViewController {
 
 		articleExtractorButton.addTarget(self, action: #selector(toggleArticleExtractor(_:)), for: .touchUpInside)
 		let articleExtractorBarButtonItem = UIBarButtonItem(customView: articleExtractorButton)
+		summarizeBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "sparkles"),
+												 style: .plain,
+												 target: self,
+												 action: #selector(summarizeArticle(_:)))
+		summarizeBarButtonItem.accessibilityLabel = NSLocalizedString("Summarize Article", comment: "Summarize Article")
 
 		if #available(iOS 26, *) {
-			toolbarItems?.insert(articleExtractorBarButtonItem, at: 5)
+			toolbarItems?.insert(summarizeBarButtonItem, at: 5)
+			toolbarItems?.insert(articleExtractorBarButtonItem, at: 6)
 		} else {
 			let flex = { UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil) }
 			toolbarItems = [
@@ -153,6 +167,8 @@ final class ArticleViewController: UIViewController {
 				starBarButtonItem,
 				flex(),
 				nextUnreadBarButtonItem,
+				flex(),
+				summarizeBarButtonItem,
 				flex(),
 				articleExtractorBarButtonItem,
 				flex(),
@@ -267,6 +283,7 @@ final class ArticleViewController: UIViewController {
 
 		guard let article = article else {
 			articleExtractorButton.isEnabled = false
+			summarizeBarButtonItem.isEnabled = false
 			nextUnreadBarButtonItem.isEnabled = false
 			prevArticleBarButtonItem.isEnabled = false
 			nextArticleBarButtonItem.isEnabled = false
@@ -281,6 +298,7 @@ final class ArticleViewController: UIViewController {
 		nextArticleBarButtonItem.isEnabled = coordinator.isNextArticleAvailable
 		readBarButtonItem.isEnabled = true
 		starBarButtonItem.isEnabled = true
+		summarizeBarButtonItem.isEnabled = isSummarizeButtonAvailable()
 
 		let permalinkPresent = article.preferredLink != nil
 		articleExtractorButton.isEnabled = permalinkPresent && !AppDefaults.shared.isDeveloperBuild
@@ -332,6 +350,7 @@ final class ArticleViewController: UIViewController {
 		if AppDefaults.shared.logicalArticleFullscreenEnabled {
 			currentWebViewController?.hideBars()
 		}
+		updateUI()
 	}
 
 	// MARK: Actions
@@ -346,6 +365,45 @@ final class ArticleViewController: UIViewController {
 
 	@IBAction func toggleArticleExtractor(_ sender: Any) {
 		currentWebViewController?.toggleArticleExtractor()
+	}
+
+	@IBAction func summarizeArticle(_ sender: Any) {
+		guard let article, let cacheKey = summaryCacheKey(for: article) else {
+			return
+		}
+
+		if let cachedSummary = Self.summaryCache[cacheKey] {
+			currentWebViewController?.showSummary(.summary(cachedSummary), animated: true)
+			currentWebViewController?.scrollToTop(animated: true)
+			return
+		}
+
+		let promptText = summaryPromptText(for: article)
+		guard !promptText.isEmpty else {
+			currentWebViewController?.showSummary(.error(NSLocalizedString("There is no article text to summarize.", comment: "Summary error")), animated: true)
+			currentWebViewController?.scrollToTop(animated: true)
+			return
+		}
+
+		summaryTask?.cancel()
+		currentWebViewController?.showSummary(.loading, animated: true)
+		currentWebViewController?.scrollToTop(animated: true)
+
+		summaryTask = Task { [weak self] in
+			guard let self else { return }
+			let result = await summarize(promptText: promptText)
+			guard !Task.isCancelled else { return }
+			guard cacheKey == summaryCacheKey(for: self.article) else { return }
+
+			switch result {
+			case .success(let summary):
+				Self.summaryCache[cacheKey] = summary
+				currentWebViewController?.showSummary(.summary(summary), animated: true)
+			case .failure(let error):
+				currentWebViewController?.showSummary(.error(error.localizedDescription), animated: true)
+			}
+			currentWebViewController?.scrollToTop(animated: true)
+		}
 	}
 
 	@IBAction func nextUnread(_ sender: Any) {
@@ -601,6 +659,95 @@ private extension ArticleViewController {
 		articleExtractorButton.buttonState = currentWebViewController?.articleExtractorButtonState ?? .off
 	}
 
+	func isSummarizeButtonAvailable() -> Bool {
+		guard #available(iOS 26, *) else {
+			return false
+		}
+
+		switch SystemLanguageModel.default.availability {
+		case .available, .unavailable(.modelNotReady):
+			return true
+		case .unavailable:
+			return false
+		@unknown default:
+			return false
+		}
+	}
+
+	func summaryCacheKey(for article: Article?) -> String? {
+		guard let article else { return nil }
+		return "\(article.accountID)-\(article.articleID)"
+	}
+
+	func summaryPromptText(for article: Article) -> String {
+		let articleContent: String
+		if currentState?.isShowingExtractedArticle == true, let extractedArticle = currentState?.extractedArticle {
+			articleContent = extractedArticle.content ?? ""
+		} else {
+			articleContent = article.body ?? ""
+		}
+
+		let title = ArticleStringFormatter.sanitizedTitle(article.title, forHTML: false) ?? ""
+		let text = articleContent.strippingHTML(maxCharacters: Self.maximumSummaryInputCharacters)
+		guard !text.isEmpty else { return "" }
+		return """
+		Summarize this article in 3 concise bullet points. Keep the summary factual and avoid adding information that is not present in the article.
+
+		Title:
+		\(title)
+
+		Article:
+		\(text)
+		"""
+	}
+
+	func summarize(promptText: String) async -> Result<String, Error> {
+		guard #available(iOS 26, *) else {
+			return .failure(SummaryError.unavailable(NSLocalizedString("Article summaries require iOS 26 or later.", comment: "Summary error")))
+		}
+
+		return await summarizeWithFoundationModels(promptText: promptText)
+	}
+
+	@available(iOS 26, *)
+	func summarizeWithFoundationModels(promptText: String) async -> Result<String, Error> {
+		let model = SystemLanguageModel.default
+		guard model.isAvailable else {
+			return .failure(SummaryError.unavailable(summaryUnavailableMessage(for: model.availability)))
+		}
+
+		do {
+			let session = LanguageModelSession(instructions: "You summarize RSS articles for a reader app. Keep summaries short, accurate, and neutral.")
+			let options = GenerationOptions(temperature: 0.2, maximumResponseTokens: Self.maximumSummaryResponseTokens)
+			let response = try await session.respond(to: promptText, options: options)
+			let summary = response.content.trimmingWhitespace
+			if summary.isEmpty {
+				return .failure(SummaryError.emptyResponse)
+			}
+			return .success(summary)
+		} catch {
+			return .failure(error)
+		}
+	}
+
+	@available(iOS 26, *)
+	func summaryUnavailableMessage(for availability: SystemLanguageModel.Availability) -> String {
+		switch availability {
+		case .available:
+			return NSLocalizedString("Article summaries are available.", comment: "Summary availability")
+		case .unavailable(.appleIntelligenceNotEnabled):
+			return NSLocalizedString("Apple Intelligence is not enabled.", comment: "Summary error")
+		case .unavailable(.deviceNotEligible):
+			return NSLocalizedString("This device does not support Apple Intelligence.", comment: "Summary error")
+		case .unavailable(.modelNotReady):
+			return NSLocalizedString("The language model is not ready yet. Try again later.", comment: "Summary error")
+		case .unavailable:
+			return NSLocalizedString("Article summaries are not available right now.", comment: "Summary error")
+		@unknown default:
+			return NSLocalizedString("Article summaries are not available right now.", comment: "Summary error")
+		}
+	}
+
 	func restoreOriginalPopGestureRecognizerDelegate() {
 		guard let gestureRecognizer = poppableDelegate.navigationController?.interactivePopGestureRecognizer,
 			gestureRecognizer.delegate === poppableDelegate else {
@@ -609,4 +756,18 @@ private extension ArticleViewController {
 		gestureRecognizer.delegate = originalPopGestureRecognizerDelegate
 	}
 
+}
+
+private enum SummaryError: LocalizedError {
+	case unavailable(String)
+	case emptyResponse
+
+	var errorDescription: String? {
+		switch self {
+		case .unavailable(let message):
+			return message
+		case .emptyResponse:
+			return NSLocalizedString("The summary was empty.", comment: "Summary error")
+		}
+	}
 }

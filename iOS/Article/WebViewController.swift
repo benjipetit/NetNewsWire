@@ -22,6 +22,12 @@ import Images
 
 final class WebViewController: UIViewController {
 
+	enum SummaryState {
+		case loading
+		case summary(String)
+		case error(String)
+	}
+
 	private struct MessageName {
 		static let imageWasClicked = "imageWasClicked"
 		static let imageWasShown = "imageWasShown"
@@ -33,6 +39,9 @@ final class WebViewController: UIViewController {
 	private var bottomShowBarsView: UIView!
 	private var topShowBarsViewConstraint: NSLayoutConstraint!
 	private var bottomShowBarsViewConstraint: NSLayoutConstraint!
+	private var summaryBannerView: UIView?
+	private var summaryContentStackView: UIStackView?
+	private var summaryBannerHeightConstraint: NSLayoutConstraint?
 
 	private var webView: PreloadedWebView? {
 		return view.subviews[0] as? PreloadedWebView
@@ -244,6 +253,60 @@ final class WebViewController: UIViewController {
 
 	func scrollPageUp() {
 		scrollPage(up: true)
+	}
+
+	func scrollToTop(animated: Bool) {
+		guard let webView else { return }
+		let topOffset = CGPoint(x: webView.scrollView.contentOffset.x, y: -webView.scrollView.adjustedContentInset.top)
+		webView.scrollView.setContentOffset(topOffset, animated: animated)
+	}
+
+	func showSummary(_ state: SummaryState, animated: Bool) {
+		let banner = summaryBannerView ?? createSummaryBannerView()
+		updateSummaryBanner(for: state)
+		view.bringSubviewToFront(banner)
+		view.layoutIfNeeded()
+
+		let fittingHeight = summaryContentStackView?.systemLayoutSizeFitting(
+			CGSize(width: view.bounds.width, height: UIView.layoutFittingCompressedSize.height),
+			withHorizontalFittingPriority: .required,
+			verticalFittingPriority: .fittingSizeLevel
+		).height ?? 0
+		summaryBannerHeightConstraint?.constant = fittingHeight
+		updateWebViewSummaryInset()
+
+		let updates = {
+			banner.alpha = 1
+			self.view.layoutIfNeeded()
+		}
+		if animated {
+			UIView.animate(withDuration: 0.2, animations: updates)
+		} else {
+			updates()
+		}
+	}
+
+	func hideSummaryBanner(animated: Bool = false) {
+		guard let banner = summaryBannerView else { return }
+		let updates = {
+			banner.alpha = 0
+			self.summaryBannerHeightConstraint?.constant = 0
+			self.updateWebViewSummaryInset()
+			self.view.layoutIfNeeded()
+		}
+		let completion: (Bool) -> Void = { _ in
+			banner.removeFromSuperview()
+			self.summaryBannerView = nil
+			self.summaryContentStackView = nil
+			self.summaryBannerHeightConstraint = nil
+			self.updateWebViewSummaryInset()
+		}
+		if animated {
+			UIView.animate(withDuration: 0.2, animations: updates, completion: completion)
+		} else {
+			updates()
+			completion(true)
+		}
 	}
 
 	func hideClickedImage() {
@@ -600,6 +663,96 @@ private struct ImageClickMessage: Codable {
 
 private extension WebViewController {
 
+	func createSummaryBannerView() -> UIView {
+		let banner = UIView()
+		banner.translatesAutoresizingMaskIntoConstraints = false
+		banner.backgroundColor = .systemYellow
+		banner.alpha = 0
+
+		let contentStackView = UIStackView()
+		contentStackView.translatesAutoresizingMaskIntoConstraints = false
+		contentStackView.axis = .vertical
+		contentStackView.spacing = 6
+		contentStackView.isLayoutMarginsRelativeArrangement = true
+		contentStackView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16)
+		banner.addSubview(contentStackView)
+
+		view.addSubview(banner)
+		let heightConstraint = banner.heightAnchor.constraint(equalToConstant: 0)
+		NSLayoutConstraint.activate([
+			banner.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+			banner.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+			banner.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+			heightConstraint,
+			contentStackView.leadingAnchor.constraint(equalTo: banner.leadingAnchor),
+			contentStackView.trailingAnchor.constraint(equalTo: banner.trailingAnchor),
+			contentStackView.topAnchor.constraint(equalTo: banner.topAnchor),
+			contentStackView.bottomAnchor.constraint(equalTo: banner.bottomAnchor)
+		])
+
+		summaryBannerView = banner
+		summaryContentStackView = contentStackView
+		summaryBannerHeightConstraint = heightConstraint
+		return banner
+	}
+
+	func updateSummaryBanner(for state: SummaryState) {
+		guard let contentStackView = summaryContentStackView else { return }
+		contentStackView.arrangedSubviews.forEach { view in
+			contentStackView.removeArrangedSubview(view)
+			view.removeFromSuperview()
+		}
+
+		let titleLabel = UILabel()
+		titleLabel.font = .preferredFont(forTextStyle: .headline)
+		titleLabel.adjustsFontForContentSizeCategory = true
+		titleLabel.textColor = .black
+		titleLabel.text = NSLocalizedString("Summary", comment: "Article summary banner title")
+		contentStackView.addArrangedSubview(titleLabel)
+
+		switch state {
+		case .loading:
+			let loadingStackView = UIStackView()
+			loadingStackView.axis = .horizontal
+			loadingStackView.alignment = .center
+			loadingStackView.spacing = 8
+
+			let activityIndicator = UIActivityIndicatorView(style: .medium)
+			activityIndicator.color = .black
+			activityIndicator.startAnimating()
+			loadingStackView.addArrangedSubview(activityIndicator)
+
+			let loadingLabel = summaryBodyLabel()
+			loadingLabel.text = NSLocalizedString("Summarizing…", comment: "Summary loading")
+			loadingStackView.addArrangedSubview(loadingLabel)
+			contentStackView.addArrangedSubview(loadingStackView)
+		case .summary(let summary):
+			let bodyLabel = summaryBodyLabel()
+			bodyLabel.text = summary
+			contentStackView.addArrangedSubview(bodyLabel)
+		case .error(let message):
+			let bodyLabel = summaryBodyLabel()
+			bodyLabel.text = message
+			contentStackView.addArrangedSubview(bodyLabel)
+		}
+	}
+
+	func summaryBodyLabel() -> UILabel {
+		let label = UILabel()
+		label.font = .preferredFont(forTextStyle: .body)
+		label.adjustsFontForContentSizeCategory = true
+		label.numberOfLines = 0
+		label.textColor = .black
+		return label
+	}
+
+	func updateWebViewSummaryInset() {
+		guard let webView else { return }
+		let bannerHeight = summaryBannerView == nil ? 0 : (summaryBannerHeightConstraint?.constant ?? 0)
+		webView.scrollView.contentInset = UIEdgeInsets(top: bannerHeight, left: -1, bottom: webView.scrollView.contentInset.bottom, right: 0)
+		webView.scrollView.verticalScrollIndicatorInsets = UIEdgeInsets(top: bannerHeight, left: 0, bottom: webView.scrollView.verticalScrollIndicatorInsets.bottom, right: 0)
+	}
+
 	func loadWebView(replaceExistingWebView: Bool = false) {
 		guard isViewLoaded else { return }
 
@@ -630,6 +783,7 @@ private extension WebViewController {
 				// rubberbanding on the iPad.  This interferes with our UIPageViewController preventing
 				// us from easily swiping between WKWebViews.  This hack fixes that.
 				webView.scrollView.contentInset = UIEdgeInsets(top: 0, left: -1, bottom: 0, right: 0)
+				self.updateWebViewSummaryInset()
 
 				webView.scrollView.setZoomScale(1.0, animated: false)
 
