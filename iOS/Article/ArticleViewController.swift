@@ -31,6 +31,7 @@ final class ArticleViewController: UIViewController {
 	@IBOutlet private var searchBar: ArticleSearchBar!
 	@IBOutlet private var searchBarBottomConstraint: NSLayoutConstraint!
 	private var defaultControls: [UIBarButtonItem]?
+	private var summarizeBarButtonItem: UIBarButtonItem?
 
 	private var pageViewController: UIPageViewController!
 	private var isPageTransitionInProgress = false
@@ -143,8 +144,14 @@ final class ArticleViewController: UIViewController {
 		articleExtractorButton.addTarget(self, action: #selector(toggleArticleExtractor(_:)), for: .touchUpInside)
 		let articleExtractorBarButtonItem = UIBarButtonItem(customView: articleExtractorButton)
 
+		let summarizeBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "sparkles"), style: .plain, target: self, action: #selector(summarizeArticle(_:)))
+		summarizeBarButtonItem.accessibilityIdentifier = "summarizeButton"
+		summarizeBarButtonItem.accLabelText = NSLocalizedString("Summarize Article", comment: "Summarize Article")
+		self.summarizeBarButtonItem = summarizeBarButtonItem
+
 		if #available(iOS 26, *) {
 			toolbarItems?.insert(articleExtractorBarButtonItem, at: 5)
+			toolbarItems?.insert(summarizeBarButtonItem, at: 6)
 		} else {
 			let flex = { UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil) }
 			toolbarItems = [
@@ -155,6 +162,8 @@ final class ArticleViewController: UIViewController {
 				nextUnreadBarButtonItem,
 				flex(),
 				articleExtractorBarButtonItem,
+				flex(),
+				summarizeBarButtonItem,
 				flex(),
 				actionBarButtonItem
 			]
@@ -273,8 +282,11 @@ final class ArticleViewController: UIViewController {
 			readBarButtonItem.isEnabled = false
 			starBarButtonItem.isEnabled = false
 			actionBarButtonItem.isEnabled = false
+			summarizeBarButtonItem?.isEnabled = false
 			return
 		}
+
+		summarizeBarButtonItem?.isEnabled = true
 
 		nextUnreadBarButtonItem.isEnabled = coordinator.isNextUnreadAvailable
 		prevArticleBarButtonItem.isEnabled = coordinator.isPrevArticleAvailable
@@ -346,6 +358,10 @@ final class ArticleViewController: UIViewController {
 
 	@IBAction func toggleArticleExtractor(_ sender: Any) {
 		currentWebViewController?.toggleArticleExtractor()
+	}
+
+	@objc func summarizeArticle(_ sender: Any) {
+		currentWebViewController?.summarizeArticle()
 	}
 
 	@IBAction func nextUnread(_ sender: Any) {

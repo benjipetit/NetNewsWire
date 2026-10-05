@@ -74,6 +74,8 @@ final class WebViewController: UIViewController {
 	weak var delegate: WebViewControllerDelegate?
 
 	private(set) var article: Article?
+	private var summaryState: ArticleSummaryBanner.State?
+	private var summaryTask: Task<Void, Never>?
 
 	let scrollPositionQueue = CoalescingQueue(name: "Article Scroll Position", interval: 0.3, maxInterval: 0.3)
 	var windowScrollY = 0 {
@@ -172,6 +174,9 @@ final class WebViewController: UIViewController {
 
 		if article != self.article {
 			self.article = article
+			summaryTask?.cancel()
+			summaryTask = nil
+			summaryState = nil
 			// A restoration offset belongs only to the article it was saved for.
 			// <https://github.com/Ranchero-Software/NetNewsWire/issues/5243>
 			restoreWindowScrollY = nil
@@ -358,6 +363,49 @@ final class WebViewController: UIViewController {
 		} else {
 			openURLInSafariViewController(url)
 		}
+	}
+
+	private func summaryBannerHTML() -> String {
+		guard let summaryState else {
+			return ""
+		}
+		return ArticleSummaryBanner.html(for: summaryState)
+	}
+
+	func summarizeArticle() {
+		guard let article else {
+			return
+		}
+		let title = article.title ?? ""
+		let content = article.contentHTML ?? article.contentText ?? article.summary ?? ""
+		let articleID = article.articleID
+
+		summaryTask?.cancel()
+		if let cached = ArticleSummarizer.shared.cachedSummary(title: title, content: content) {
+			setSummaryState(.loaded(cached))
+			return
+		}
+
+		setSummaryState(.loading)
+		summaryTask = Task { [weak self] in
+			let newState: ArticleSummaryBanner.State
+			do {
+				newState = .loaded(try await ArticleSummarizer.shared.summarize(title: title, content: content))
+			} catch is CancellationError {
+				return
+			} catch {
+				newState = .failed(NSLocalizedString("Could not generate a summary.", comment: "AI summary failure message"))
+			}
+			guard let self, !Task.isCancelled, self.article?.articleID == articleID else {
+				return
+			}
+			self.setSummaryState(newState)
+		}
+	}
+
+	private func setSummaryState(_ state: ArticleSummaryBanner.State) {
+		summaryState = state
+		webView?.evaluateJavaScript(ArticleSummaryBanner.updateScript(for: state), completionHandler: nil)
 	}
 }
 
@@ -696,7 +744,7 @@ private extension WebViewController {
 			"title": rendering.title,
 			"baseURL": rendering.baseURL,
 			"style": rendering.style,
-			"body": rendering.html,
+			"body": summaryBannerHTML() + rendering.html,
 			"windowScrollY": String(windowScrollY)
 		]
 
